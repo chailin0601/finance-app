@@ -1,6 +1,6 @@
 {
   "name": "finance-app",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,10 +9,10 @@
   },
   "dependencies": {
     "date-fns": "^3.6.0",
+    "idb": "^8.0.0",
     "next": "14.2.5",
     "react": "^18",
-    "react-dom": "^18",
-    "sql.js": "^1.14.1"
+    "react-dom": "^18"
   },
   "devDependencies": {
     "@types/node": "^20",

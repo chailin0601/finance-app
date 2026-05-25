@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Transaction, TransactionType, INCOME_CATEGORIES, EXPENSE_CATEGORIES } from "@/lib/types";
 import { generateId } from "@/lib/storage";
 
@@ -17,6 +17,16 @@ export default function TransactionForm({ onAdd, editTx, onUpdate, onCancelEdit 
   const [amount, setAmount] = useState(editTx?.amount?.toString() || "");
   const [note, setNote] = useState(editTx?.note || "");
   const [date, setDate] = useState(editTx?.date?.slice(0, 10) || new Date().toISOString().slice(0, 10));
+
+  useEffect(() => {
+    if (editTx) {
+      setType(editTx.type);
+      setCategory(editTx.category);
+      setAmount(editTx.amount.toString());
+      setNote(editTx.note);
+      setDate(editTx.date.slice(0, 10));
+    }
+  }, [editTx]);
 
   const categories = type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
@@ -47,9 +57,9 @@ export default function TransactionForm({ onAdd, editTx, onUpdate, onCancelEdit 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-slate-800 rounded-xl p-4 space-y-4">
-      <h2 className="text-lg font-semibold">
-        {editTx ? "✏️ Edit Transaksi" : "➕ Tambah Transaksi"}
+    <form onSubmit={handleSubmit} className="glass-strong rounded-2xl p-5 space-y-5">
+      <h2 className="text-base font-semibold text-slate-200">
+        {editTx ? "Edit Transaksi" : "Tambah Transaksi"}
       </h2>
 
       {/* Type toggle */}
@@ -57,36 +67,42 @@ export default function TransactionForm({ onAdd, editTx, onUpdate, onCancelEdit 
         <button
           type="button"
           onClick={() => { setType("income"); setCategory("CASH"); }}
-          className={`flex-1 py-2 rounded-lg font-medium transition ${
-            type === "income" ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-300"
+          className={`flex-1 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+            type === "income"
+              ? "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+              : "bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/50"
           }`}
         >
-          💰 Pemasukan
+          Pemasukan
         </button>
         <button
           type="button"
           onClick={() => { setType("expense"); setCategory("ES"); }}
-          className={`flex-1 py-2 rounded-lg font-medium transition ${
-            type === "expense" ? "bg-red-600 text-white" : "bg-slate-700 text-slate-300"
+          className={`flex-1 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+            type === "expense"
+              ? "bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg shadow-red-500/20"
+              : "bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/50"
           }`}
         >
-          💸 Pengeluaran
+          Pengeluaran
         </button>
       </div>
 
       {/* Category */}
       <div>
-        <label className="text-sm text-slate-400 mb-1 block">Kategori</label>
+        <label className="text-xs text-slate-400 mb-2 block uppercase tracking-wider">Kategori</label>
         <div className="flex flex-wrap gap-2">
           {categories.map((cat) => (
             <button
               key={cat}
               type="button"
               onClick={() => setCategory(cat)}
-              className={`px-3 py-1 rounded-full text-sm transition ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                 category === cat
-                  ? type === "income" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
-                  : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                  ? type === "income"
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm shadow-emerald-500/10"
+                    : "bg-red-500/20 text-red-300 border border-red-500/40 shadow-sm shadow-red-500/10"
+                  : "bg-slate-800/60 text-slate-400 border border-slate-700/40 hover:border-slate-600 hover:text-slate-300"
               }`}
             >
               {cat}
@@ -97,52 +113,52 @@ export default function TransactionForm({ onAdd, editTx, onUpdate, onCancelEdit 
 
       {/* Amount */}
       <div>
-        <label className="text-sm text-slate-400 mb-1 block">Jumlah (Rp)</label>
+        <label className="text-xs text-slate-400 mb-2 block uppercase tracking-wider">Jumlah (Rp)</label>
         <input
           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0"
-          className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full bg-slate-800/60 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
         />
       </div>
 
       {/* Date */}
       <div>
-        <label className="text-sm text-slate-400 mb-1 block">Tanggal</label>
+        <label className="text-xs text-slate-400 mb-2 block uppercase tracking-wider">Tanggal</label>
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full bg-slate-800/60 border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
         />
       </div>
 
       {/* Note */}
       <div>
-        <label className="text-sm text-slate-400 mb-1 block">Catatan</label>
+        <label className="text-xs text-slate-400 mb-2 block uppercase tracking-wider">Catatan</label>
         <input
           type="text"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Opsional..."
-          className="w-full bg-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full bg-slate-800/60 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
         />
       </div>
 
       {/* Buttons */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 pt-1">
         <button
           type="submit"
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition"
+          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30"
         >
-          {editTx ? "💾 Simpan" : "➕ Tambah"}
+          {editTx ? "Simpan" : "Tambah"}
         </button>
         {editTx && onCancelEdit && (
           <button
             type="button"
             onClick={onCancelEdit}
-            className="px-4 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg transition"
+            className="px-5 bg-slate-800/80 border border-slate-700/50 hover:border-slate-600 text-slate-300 py-3 rounded-xl transition-all"
           >
             Batal
           </button>
