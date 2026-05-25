@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Transaction } from "@/lib/types";
 import { getTransactions, addTransaction, updateTransaction, deleteTransaction } from "@/lib/storage";
-import { getSession, clearSession } from "@/lib/auth";
+import { getSession, logout, User } from "@/lib/auth";
 import TransactionForm from "@/components/TransactionForm";
 import TransactionList from "@/components/TransactionList";
 import Report from "@/components/Report";
@@ -17,15 +17,18 @@ export default function Home() {
   const [tab, setTab] = useState<Tab>("input");
   const [editTx, setEditTx] = useState<Transaction | null>(null);
   const [loading, setLoading] = useState(true);
-  const [session, setSessionState] = useState<{ id: string; username: string } | null>(null);
+  const [session, setSessionState] = useState<User | null>(null);
 
   useEffect(() => {
-    const s = getSession();
-    if (!s) {
-      router.push("/login");
-      return;
-    }
-    setSessionState(s);
+    const checkAuth = async () => {
+      const user = await getSession();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+      setSessionState(user);
+    };
+    checkAuth();
   }, [router]);
 
   const loadData = useCallback(async () => {
@@ -63,8 +66,8 @@ export default function Home() {
     setTab("input");
   };
 
-  const handleLogout = () => {
-    clearSession();
+  const handleLogout = async () => {
+    await logout();
     router.push("/login");
   };
 

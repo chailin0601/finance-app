@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { registerUser, loginUser, setSession } from "@/lib/auth";
+import { registerUser, loginUser } from "@/lib/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -27,8 +27,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (password.length < 4) {
-      setError("Password minimal 4 karakter");
+    if (password.length < 6) {
+      setError("Password minimal 6 karakter");
       return;
     }
 
@@ -50,8 +50,7 @@ export default function RegisterPage() {
     const loginResult = await loginUser(username.trim(), password);
     setLoading(false);
 
-    if (loginResult.success && loginResult.user) {
-      setSession(loginResult.user);
+    if (loginResult.success) {
       router.push("/");
     } else {
       router.push("/login");
@@ -101,7 +100,7 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all"
-              placeholder="Buat password (min. 4 karakter)"
+              placeholder="Buat password (min. 6 karakter)"
               autoComplete="new-password"
             />
           </div>

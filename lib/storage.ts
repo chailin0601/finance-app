@@ -1,60 +1,83 @@
-import { openDB, DBSchema, IDBPDatabase } from "idb";
+import { supabase } from "./supabase";
 import { Transaction } from "./types";
 
-interface FinanceDB extends DBSchema {
-  transactions: {
-    key: string;
-    value: Transaction;
-    indexes: {
-      "by-date": string;
-      "by-type": string;
-    };
-  };
-}
-
-const DB_NAME = "finance-app-db";
-const DB_VERSION = 1;
-
-let dbPromise: Promise<IDBPDatabase<FinanceDB>> | null = null;
-
-function getDB(): Promise<IDBPDatabase<FinanceDB>> {
-  if (!dbPromise) {
-    dbPromise = openDB<FinanceDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        const store = db.createObjectStore("transactions", { keyPath: "id" });
-        store.createIndex("by-date", "date");
-        store.createIndex("by-type", "type");
-      },
-    });
-  }
-  return dbPromise;
-}
-
 export async function getTransactions(): Promise<Transaction[]> {
-  const db = await getDB();
-  const all = await db.getAll("transactions");
-  return all.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("*")
+    .order("date", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching transactions:", error);
+    return [];
+  }
+
+  return (data || []).map((row) => ({
+    id: row.id,
+    type: row.type,
+    category: row.category,
+    amount: Number(row.amount),
+    note: row.note || "",
+    date: row.date,
+    createdAt: row.created_at,
+  }));
 }
 
 export async function addTransaction(tx: Transaction): Promise<Transaction[]> {
-  const db = await getDB();
-  await db.put("transactions", tx);
+  const { data: session } = await supabase.auth.getSession();
+  if (!session.session?.user) return getTransactions();
+
+  const { error } = await supabase.from("transactions").insert({
+    id: tx.id,
+    user_id: session.session.user.id,
+    type: tx.type,
+    category: tx.category,
+    amount: tx.amount,
+    note: tx.note,
+    date: tx.date,
+    created_at: tx.createdAt,
+  });
+
+  if (error) {
+    console.error("Error adding transaction:", error);
+  }
+
   return getTransactions();
 }
 
-export async function updateTransaction(id: string, updated: Partial<Transaction>): Promise<Transaction[]> {
-  const db = await getDB();
-  const existing = await db.get("transactions", id);
-  if (existing) {
-    const merged = { ...existing, ...updated, id };
-    await db.put("transactions", merged);
+export async function updateTransaction(
+  id: string,
+  updated: Partial<Transaction>
+): Promise<Transaction[]> {
+  const updateData: Record<string, unknown> = {};
+  if (updated.type !== undefined) updateData.type = updated.type;
+  if (updated.category !== undefined) updateData.category = updated.category;
+  if (updated.amount !== undefined) updateData.amount = updated.amount;
+  if (updated.note !== undefined) updateData.note = updated.note;
+  if (updated.date !== undefined) updateData.date = updated.date;
+
+  const { error } = await supabase
+    .from("transactions")
+    .update(updateData)
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error updating transaction:", error);
   }
+
   return getTransactions();
 }
 
 export async function deleteTransaction(id: string): Promise<Transaction[]> {
-  const db = await getDB();
-  await db.delete("transactions", id);
+  const { error } = await supabase
+    .from("transactions")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error deleting transaction:", error);
+  }
+
   return getTransactions();
 }
 

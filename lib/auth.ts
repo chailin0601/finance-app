@@ -1,120 +1,102 @@
-import { openDB, DBSchema, IDBPDatabase } from "idb";
+import { supabase } from "./supabase";
 
 export interface User {
   id: string;
+  email: string;
   username: string;
-  password: string; // hashed
-  createdAt: string;
 }
 
-interface AuthDB extends DBSchema {
-  users: {
-    key: string;
-    value: User;
-    indexes: {
-      "by-username": string;
-    };
-  };
-}
+export async function registerUser(
+  username: string,
+  password: string
+): Promise<{ success: boolean; error?: string }> {
+  // Supabase Auth uses email — we fake it with username@oxmdlrch.local
+  const email = `${username.toLowerCase()}@oxmdlrch.local`;
 
-const AUTH_DB = "finance-auth-db";
-const AUTH_VERSION = 1;
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { username },
+    },
+  });
 
-let authDbPromise: Promise<IDBPDatabase<AuthDB>> | null = null;
-
-function getAuthDB(): Promise<IDBPDatabase<AuthDB>> {
-  if (!authDbPromise) {
-    authDbPromise = openDB<AuthDB>(AUTH_DB, AUTH_VERSION, {
-      upgrade(db) {
-        const store = db.createObjectStore("users", { keyPath: "id" });
-        store.createIndex("by-username", "username", { unique: true });
-      },
-    });
-  }
-  return authDbPromise;
-}
-
-// Simple hash (not crypto-grade, but fine for client-side demo)
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password + "oxmdlrch-salt-2024");
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-export async function registerUser(username: string, password: string): Promise<{ success: boolean; error?: string }> {
-  const db = await getAuthDB();
-  
-  // Check if username exists
-  const existing = await db.getFromIndex("users", "by-username", username);
-  if (existing) {
-    return { success: false, error: "Username sudah dipakai" };
+  if (error) {
+    if (error.message.includes("already registered")) {
+      return { success: false, error: "Username sudah dipakai" };
+    }
+    return { success: false, error: error.message };
   }
 
-  const hashed = await hashPassword(password);
-  const user: User = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-    username,
-    password: hashed,
-    createdAt: new Date().toISOString(),
-  };
+  if (!data.user) {
+    return { success: false, error: "Registrasi gagal" };
+  }
 
-  await db.put("users", user);
   return { success: true };
 }
 
-export async function loginUser(username: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
-  const db = await getAuthDB();
-  const user = await db.getFromIndex("users", "by-username", username);
-  
-  if (!user) {
-    return { success: false, error: "Username tidak ditemukan" };
+export async function loginUser(
+  username: string,
+  password: string
+): Promise<{ success: boolean; user?: User; error?: string }> {
+  const email = `${username.toLowerCase()}@oxmdlrch.local`;
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    if (error.message.includes("Invalid login")) {
+      return { success: false, error: "Username atau password salah" };
+    }
+    return { success: false, error: error.message };
   }
 
-  const hashed = await hashPassword(password);
-  if (user.password !== hashed) {
-    return { success: false, error: "Password salah" };
+  if (!data.user) {
+    return { success: false, error: "Login gagal" };
   }
 
-  return { success: true, user };
+  return {
+    success: true,
+    user: {
+      id: data.user.id,
+      email: data.user.email || email,
+      username: data.user.user_metadata?.username || username,
+    },
+  };
+}
+
+export async function resetPassword(
+  username: string,
+  newPassword: string
+): Promise<{ success: boolean; error?: string }> {
+  // For password reset without email verification, we use service role
+  // But from client-side, user must be logged in to update password
+  // Alternative: admin endpoint via API route
+  // For now, we'll use a simple approach: sign in isn't possible, so we expose an API route
+
+  return { success: false, error: "Gunakan halaman reset password — hubungi admin atau register ulang" };
+}
+
+export async function getSession(): Promise<User | null> {
+  const { data } = await supabase.auth.getSession();
+  if (!data.session?.user) return null;
+
+  const user = data.session.user;
+  return {
+    id: user.id,
+    email: user.email || "",
+    username: user.user_metadata?.username || user.email?.split("@")[0] || "",
+  };
+}
+
+export async function logout(): Promise<void> {
+  await supabase.auth.signOut();
 }
 
 export async function getRegisteredUsernames(): Promise<string[]> {
-  const db = await getAuthDB();
-  const users = await db.getAll("users");
-  return users.map((u) => u.username);
-}
-
-export async function resetPassword(username: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
-  const db = await getAuthDB();
-  const user = await db.getFromIndex("users", "by-username", username);
-  
-  if (!user) {
-    return { success: false, error: "Username tidak ditemukan" };
-  }
-
-  const hashed = await hashPassword(newPassword);
-  user.password = hashed;
-  await db.put("users", user);
-  return { success: true };
-}
-
-export function setSession(user: User): void {
-  localStorage.setItem("finance-session", JSON.stringify({ id: user.id, username: user.username }));
-}
-
-export function getSession(): { id: string; username: string } | null {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem("finance-session");
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-export function clearSession(): void {
-  localStorage.removeItem("finance-session");
+  // Can't list users from client-side (security)
+  // Return empty — user must remember their username
+  return [];
 }

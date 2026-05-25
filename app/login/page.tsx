@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { loginUser, setSession } from "@/lib/auth";
+import { loginUser } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,7 +30,6 @@ export default function LoginPage() {
       return;
     }
 
-    setSession(result.user!);
     router.push("/");
   };
 

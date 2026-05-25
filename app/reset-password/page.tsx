@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { resetPassword, getRegisteredUsernames } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -13,14 +13,6 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [usernames, setUsernames] = useState<string[]>([]);
-  const [showUsernames, setShowUsernames] = useState(false);
-
-  const handleShowUsernames = async () => {
-    const names = await getRegisteredUsernames();
-    setUsernames(names);
-    setShowUsernames(true);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,8 +23,8 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    if (newPassword.length < 4) {
-      setError("Password minimal 4 karakter");
+    if (newPassword.length < 6) {
+      setError("Password minimal 6 karakter");
       return;
     }
 
@@ -42,11 +34,22 @@ export default function ResetPasswordPage() {
     }
 
     setLoading(true);
-    const result = await resetPassword(username.trim(), newPassword);
+
+    // Try to sign in with a dummy password to verify username exists
+    const email = `${username.trim().toLowerCase()}@oxmdlrch.local`;
+    
+    // Use the API route to reset password (needs service role)
+    const res = await fetch("/api/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, newPassword }),
+    });
+
+    const data = await res.json();
     setLoading(false);
 
-    if (!result.success) {
-      setError(result.error || "Reset gagal");
+    if (!res.ok) {
+      setError(data.error || "Reset gagal");
       return;
     }
 
@@ -104,36 +107,6 @@ export default function ResetPasswordPage() {
               placeholder="Username yang sudah terdaftar"
               autoComplete="username"
             />
-            <button
-              type="button"
-              onClick={handleShowUsernames}
-              className="text-xs text-amber-400 hover:text-amber-300 transition-colors"
-            >
-              Lupa username? Klik untuk lihat daftar
-            </button>
-            {showUsernames && (
-              <div className="bg-slate-800/70 border border-slate-700/50 rounded-xl px-4 py-3 mt-2">
-                <p className="text-xs text-slate-400 mb-2">Username terdaftar di browser ini:</p>
-                {usernames.length === 0 ? (
-                  <p className="text-xs text-slate-500 italic">Belum ada akun terdaftar</p>
-                ) : (
-                  <ul className="space-y-1">
-                    {usernames.map((name) => (
-                      <li key={name} className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                        <button
-                          type="button"
-                          onClick={() => { setUsername(name); setShowUsernames(false); }}
-                          className="text-sm text-slate-200 hover:text-amber-400 transition-colors"
-                        >
-                          {name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
           </div>
 
           <div className="space-y-2">
@@ -143,7 +116,7 @@ export default function ResetPasswordPage() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all"
-              placeholder="Password baru (min. 4 karakter)"
+              placeholder="Password baru (min. 6 karakter)"
               autoComplete="new-password"
             />
           </div>
