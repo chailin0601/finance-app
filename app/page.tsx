@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Transaction } from "@/lib/types";
-import { getTransactions, addTransaction, updateTransaction, deleteTransaction, generateId } from "@/lib/storage";
+import { getTransactions, addTransaction, updateTransaction, deleteTransaction } from "@/lib/storage";
+import { getSession, clearSession } from "@/lib/auth";
 import TransactionForm from "@/components/TransactionForm";
 import TransactionList from "@/components/TransactionList";
 import Report from "@/components/Report";
@@ -10,10 +12,21 @@ import Report from "@/components/Report";
 type Tab = "input" | "history" | "report";
 
 export default function Home() {
+  const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [tab, setTab] = useState<Tab>("input");
   const [editTx, setEditTx] = useState<Transaction | null>(null);
   const [loading, setLoading] = useState(true);
+  const [session, setSessionState] = useState<{ id: string; username: string } | null>(null);
+
+  useEffect(() => {
+    const s = getSession();
+    if (!s) {
+      router.push("/login");
+      return;
+    }
+    setSessionState(s);
+  }, [router]);
 
   const loadData = useCallback(async () => {
     const data = await getTransactions();
@@ -22,8 +35,10 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (session) {
+      loadData();
+    }
+  }, [session, loadData]);
 
   const handleAdd = async (tx: Transaction) => {
     const updated = await addTransaction(tx);
@@ -48,6 +63,11 @@ export default function Home() {
     setTab("input");
   };
 
+  const handleLogout = () => {
+    clearSession();
+    router.push("/login");
+  };
+
   // Summary — reset per bulan (hanya hitung bulan ini)
   const now = new Date();
   const currentMonthTx = transactions.filter((t) => {
@@ -59,7 +79,7 @@ export default function Home() {
   const totalCashIncome = currentMonthTx.filter((t) => t.type === "income" && t.category === "CASH").reduce((s, t) => s + t.amount, 0);
   const saldoCash = totalCashIncome - totalExpense;
 
-  if (loading) {
+  if (loading || !session) {
     return (
       <main className="max-w-lg mx-auto px-4 py-8 text-center">
         <div className="glass rounded-2xl p-8">
@@ -73,11 +93,24 @@ export default function Home() {
   return (
     <main className="max-w-lg mx-auto px-4 py-6 space-y-5 pb-20">
       {/* Header */}
-      <div className="text-center pt-2">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-          OxMdlRch Finance
-        </h1>
-        <p className="text-slate-500 text-xs mt-1 tracking-wide uppercase">Catatan Keuangan Harian</p>
+      <div className="flex items-center justify-between pt-2">
+        <div>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            OxMdlRch Finance
+          </h1>
+          <p className="text-slate-500 text-xs mt-0.5 tracking-wide">
+            Halo, <span className="text-slate-300 font-medium">{session.username}</span>
+          </p>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-red-400 hover:border-red-500/30 transition-all"
+          title="Logout"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+        </button>
       </div>
 
       {/* Balance Card */}
