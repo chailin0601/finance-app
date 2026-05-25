@@ -76,8 +76,7 @@ export default function Home() {
   });
   const totalIncome = currentMonthTx.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
   const totalExpense = currentMonthTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
-  const totalCashIncome = currentMonthTx.filter((t) => t.type === "income" && t.category === "CASH").reduce((s, t) => s + t.amount, 0);
-  const saldoCash = totalCashIncome - totalExpense;
+  const totalSaldo = totalIncome - totalExpense;
 
   if (loading || !session) {
     return (
@@ -116,11 +115,11 @@ export default function Home() {
       {/* Balance Card */}
       <div className="glass-strong rounded-2xl p-5 space-y-4">
         <div className="text-center">
-          <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Saldo Cash</p>
-          <p className={`text-3xl font-bold tracking-tight ${saldoCash >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-            Rp {saldoCash.toLocaleString("id-ID")}
+          <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Total Saldo</p>
+          <p className={`text-3xl font-bold tracking-tight ${totalSaldo >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+            Rp {totalSaldo.toLocaleString("id-ID")}
           </p>
-          <p className="text-[10px] text-slate-500 mt-1">CASH Income - Total Pengeluaran</p>
+          <p className="text-[10px] text-slate-500 mt-1">Total Pemasukan - Total Pengeluaran</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-center">
