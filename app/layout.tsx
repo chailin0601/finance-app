@@ -2,13 +2,13 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Finance App",
-  description: "Aplikasi pencatatan pemasukan & pengeluaran harian",
+  title: "OxMdlRch Finance",
+  description: "OxMdlRch Finance — Catatan Keuangan Harian",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Finance",
+    title: "OxMdlRch Finance",
   },
 };
 

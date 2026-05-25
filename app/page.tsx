@@ -70,7 +70,7 @@ export default function Home() {
       {/* Header */}
       <div className="text-center pt-2">
         <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-          Finance App
+          OxMdlRch Finance
         </h1>
         <p className="text-slate-500 text-xs mt-1 tracking-wide uppercase">Catatan Keuangan Harian</p>
       </div>

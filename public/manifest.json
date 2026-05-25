@@ -1,6 +1,6 @@
 {
-  "name": "Finance App",
-  "short_name": "Finance",
+  "name": "OxMdlRch Finance",
+  "short_name": "OxMdlRch",
   "description": "Aplikasi pencatatan pemasukan & pengeluaran harian",
   "start_url": "/",
   "display": "standalone",
