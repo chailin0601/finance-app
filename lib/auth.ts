@@ -80,6 +80,20 @@ export async function loginUser(username: string, password: string): Promise<{ s
   return { success: true, user };
 }
 
+export async function resetPassword(username: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+  const db = await getAuthDB();
+  const user = await db.getFromIndex("users", "by-username", username);
+  
+  if (!user) {
+    return { success: false, error: "Username tidak ditemukan" };
+  }
+
+  const hashed = await hashPassword(newPassword);
+  user.password = hashed;
+  await db.put("users", user);
+  return { success: true };
+}
+
 export function setSession(user: User): void {
   localStorage.setItem("finance-session", JSON.stringify({ id: user.id, username: user.username }));
 }

@@ -98,13 +98,20 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Register link */}
-        <p className="text-center text-sm text-slate-500">
-          Belum punya akun?{" "}
-          <Link href="/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
-            Daftar di sini
-          </Link>
-        </p>
+        {/* Links */}
+        <div className="text-center space-y-2">
+          <p className="text-sm text-slate-500">
+            Belum punya akun?{" "}
+            <Link href="/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+              Daftar di sini
+            </Link>
+          </p>
+          <p className="text-sm text-slate-500">
+            <Link href="/reset-password" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">
+              Lupa Password?
+            </Link>
+          </p>
+        </div>
       </div>
     </main>
   );
