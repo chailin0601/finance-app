@@ -1,38 +1,42 @@
 import { Transaction } from "./types";
 
-const STORAGE_KEY = "finance_transactions";
+const DB_URL = "/api/db";
 
-export function getTransactions(): Transaction[] {
-  if (typeof window === "undefined") return [];
-  const data = localStorage.getItem(STORAGE_KEY);
-  return data ? JSON.parse(data) : [];
+export async function getTransactions(): Promise<Transaction[]> {
+  const res = await fetch(DB_URL);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.transactions || [];
 }
 
-export function saveTransactions(transactions: Transaction[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+export async function addTransaction(tx: Transaction): Promise<Transaction[]> {
+  const res = await fetch(DB_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "add", transaction: tx }),
+  });
+  const data = await res.json();
+  return data.transactions || [];
 }
 
-export function addTransaction(tx: Transaction): Transaction[] {
-  const all = getTransactions();
-  all.unshift(tx);
-  saveTransactions(all);
-  return all;
+export async function updateTransaction(id: string, updated: Partial<Transaction>): Promise<Transaction[]> {
+  const res = await fetch(DB_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "update", id, transaction: updated }),
+  });
+  const data = await res.json();
+  return data.transactions || [];
 }
 
-export function updateTransaction(id: string, updated: Partial<Transaction>): Transaction[] {
-  const all = getTransactions();
-  const idx = all.findIndex((t) => t.id === id);
-  if (idx !== -1) {
-    all[idx] = { ...all[idx], ...updated };
-  }
-  saveTransactions(all);
-  return all;
-}
-
-export function deleteTransaction(id: string): Transaction[] {
-  const all = getTransactions().filter((t) => t.id !== id);
-  saveTransactions(all);
-  return all;
+export async function deleteTransaction(id: string): Promise<Transaction[]> {
+  const res = await fetch(DB_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "delete", id }),
+  });
+  const data = await res.json();
+  return data.transactions || [];
 }
 
 export function generateId(): string {

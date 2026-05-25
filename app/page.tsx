@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Transaction } from "@/lib/types";
-import { getTransactions, addTransaction, updateTransaction, deleteTransaction } from "@/lib/storage";
+import { getTransactions, addTransaction, updateTransaction, deleteTransaction, generateId } from "@/lib/storage";
 import TransactionForm from "@/components/TransactionForm";
 import TransactionList from "@/components/TransactionList";
 import Report from "@/components/Report";
@@ -13,25 +13,32 @@ export default function Home() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [tab, setTab] = useState<Tab>("input");
   const [editTx, setEditTx] = useState<Transaction | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    setTransactions(getTransactions());
+  const loadData = useCallback(async () => {
+    const data = await getTransactions();
+    setTransactions(data);
+    setLoading(false);
   }, []);
 
-  const handleAdd = (tx: Transaction) => {
-    const updated = addTransaction(tx);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleAdd = async (tx: Transaction) => {
+    const updated = await addTransaction(tx);
     setTransactions(updated);
   };
 
-  const handleUpdate = (tx: Transaction) => {
-    const updated = updateTransaction(tx.id, tx);
+  const handleUpdate = async (tx: Transaction) => {
+    const updated = await updateTransaction(tx.id, tx);
     setTransactions(updated);
     setEditTx(null);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Hapus transaksi ini?")) {
-      const updated = deleteTransaction(id);
+      const updated = await deleteTransaction(id);
       setTransactions(updated);
     }
   };
@@ -45,6 +52,14 @@ export default function Home() {
   const totalIncome = transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
   const totalExpense = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
   const balance = totalIncome - totalExpense;
+
+  if (loading) {
+    return (
+      <main className="max-w-lg mx-auto px-4 py-6 text-center">
+        <p className="text-slate-400">Loading...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="max-w-lg mx-auto px-4 py-6 space-y-4">
