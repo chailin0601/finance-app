@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { resetPassword } from "@/lib/auth";
+import { resetPassword, getRegisteredUsernames } from "@/lib/auth";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -13,6 +13,14 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [usernames, setUsernames] = useState<string[]>([]);
+  const [showUsernames, setShowUsernames] = useState(false);
+
+  const handleShowUsernames = async () => {
+    const names = await getRegisteredUsernames();
+    setUsernames(names);
+    setShowUsernames(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +104,36 @@ export default function ResetPasswordPage() {
               placeholder="Username yang sudah terdaftar"
               autoComplete="username"
             />
+            <button
+              type="button"
+              onClick={handleShowUsernames}
+              className="text-xs text-amber-400 hover:text-amber-300 transition-colors"
+            >
+              Lupa username? Klik untuk lihat daftar
+            </button>
+            {showUsernames && (
+              <div className="bg-slate-800/70 border border-slate-700/50 rounded-xl px-4 py-3 mt-2">
+                <p className="text-xs text-slate-400 mb-2">Username terdaftar di browser ini:</p>
+                {usernames.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic">Belum ada akun terdaftar</p>
+                ) : (
+                  <ul className="space-y-1">
+                    {usernames.map((name) => (
+                      <li key={name} className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                        <button
+                          type="button"
+                          onClick={() => { setUsername(name); setShowUsernames(false); }}
+                          className="text-sm text-slate-200 hover:text-amber-400 transition-colors"
+                        >
+                          {name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

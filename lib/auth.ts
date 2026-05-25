@@ -80,6 +80,12 @@ export async function loginUser(username: string, password: string): Promise<{ s
   return { success: true, user };
 }
 
+export async function getRegisteredUsernames(): Promise<string[]> {
+  const db = await getAuthDB();
+  const users = await db.getAll("users");
+  return users.map((u) => u.username);
+}
+
 export async function resetPassword(username: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
   const db = await getAuthDB();
   const user = await db.getFromIndex("users", "by-username", username);
