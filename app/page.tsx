@@ -48,10 +48,15 @@ export default function Home() {
     setTab("input");
   };
 
-  // Summary
-  const totalIncome = transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
-  const totalExpense = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
-  const totalCashIncome = transactions.filter((t) => t.type === "income" && t.category === "CASH").reduce((s, t) => s + t.amount, 0);
+  // Summary — reset per bulan (hanya hitung bulan ini)
+  const now = new Date();
+  const currentMonthTx = transactions.filter((t) => {
+    const d = new Date(t.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const totalIncome = currentMonthTx.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const totalExpense = currentMonthTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const totalCashIncome = currentMonthTx.filter((t) => t.type === "income" && t.category === "CASH").reduce((s, t) => s + t.amount, 0);
   const saldoCash = totalCashIncome - totalExpense;
 
   if (loading) {
